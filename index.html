@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>리플 현상의 이론적 탐구</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},chtml:{scale:1.1}};</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;
+  font-family:'Noto Sans KR',-apple-system,sans-serif;
+  background:#fff;color:#0f0f0f;-webkit-font-smoothing:antialiased}
+
+/* ── Progress ── */
+#progress{position:fixed;top:0;left:0;z-index:999;height:3px;
+  background:#0f0f0f;width:0;transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+/* ── Slides ── */
+.slide{position:absolute;inset:0;display:none;flex-direction:column;
+  justify-content:center;padding:52px 108px 88px}
+.slide.active{display:flex}
+.slide.vcenter{align-items:center;text-align:center}
+
+/* ── Eyebrow ── */
+.eyebrow{font-size:15px;font-weight:500;letter-spacing:.2em;
+  text-transform:uppercase;color:#aaa;margin-bottom:18px}
+
+/* ── Type ── */
+.slide h1{font-size:72px;font-weight:900;line-height:1.1;margin-bottom:20px}
+.slide h2{font-size:52px;font-weight:700;line-height:1.2;margin-bottom:24px}
+.slide p{font-size:26px;line-height:1.7;color:#1a1a1a}
+.rule{width:48px;height:3px;background:#0f0f0f;margin-bottom:22px}
+
+/* ── Grid layouts ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:52px;width:100%;align-items:center}
+.g46{display:grid;grid-template-columns:4fr 6fr;gap:48px;width:100%;align-items:center}
+.g37{display:grid;grid-template-columns:3.2fr 6.8fr;gap:48px;width:100%;align-items:center}
+
+/* ── Photo placeholder ── */
+.photo-ph{background:#f3f3f3;border:2px dashed #d0d0d0;border-radius:8px;
+  aspect-ratio:16/10;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;
+  font-size:18px;color:#bbb;letter-spacing:.06em;font-weight:500}
+.photo-ph svg{opacity:.3}
+
+/* ── Formula block ── */
+.fml{background:#f8f8f8;border-left:4px solid #0f0f0f;
+  padding:18px 24px;border-radius:0 8px 8px 0;font-size:24px;margin:14px 0}
+.fml-lg{font-size:28px;padding:22px 28px}
+
+/* ── Symbol table ── */
+.sym{display:grid;grid-template-columns:auto 1fr;
+  gap:5px 18px;margin:10px 0}
+.sk{font-size:20px;font-weight:700;white-space:nowrap;font-family:'DM Mono',monospace}
+.sv{font-size:20px;color:#444;line-height:1.5}
+
+/* ── Data table ── */
+.tbl{width:100%;border-collapse:collapse;font-size:23px;margin-top:10px}
+.tbl th{background:#0f0f0f;color:#fff;padding:12px 18px;
+  text-align:left;font-weight:500;font-size:20px}
+.tbl td{padding:11px 18px;border-bottom:1px solid #ececec}
+.tbl tr:last-child td{border:none}
+.tbl tr:nth-child(even) td{background:#fafafa}
+
+/* ── Buttons ── */
+.btn-row{display:flex;gap:10px;margin-bottom:14px}
+.btn{padding:9px 22px;border:2px solid #0f0f0f;background:#fff;
+  color:#0f0f0f;font-size:18px;font-family:inherit;font-weight:600;
+  cursor:pointer;border-radius:6px;transition:all .18s;letter-spacing:.01em}
+.btn:hover{background:#0f0f0f;color:#fff}
+.btn.on{background:#0f0f0f;color:#fff}
+
+/* ── Slider ── */
+.sl-wrap{margin:12px 0}
+.sl-row{display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:6px}
+.sl-label{font-size:19px;color:#555}
+.sl-val{font-size:20px;font-weight:700;color:#0f0f0f;font-family:'DM Mono',monospace}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;
+  background:#ddd;border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;
+  width:20px;height:20px;background:#0f0f0f;border-radius:50%;cursor:pointer}
+.sl-ends{display:flex;justify-content:space-between;
+  font-size:14px;color:#bbb;margin-top:3px}
+
+/* ── Live values ── */
+.live{background:#f8f8f8;border-radius:8px;padding:14px 18px;margin-top:12px}
+.lrow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;
+  border-bottom:1px solid #eee}
+.lrow:last-child{border:none}
+.lk{font-size:19px;color:#666}
+.lv{font-size:24px;font-weight:700;color:#0f0f0f;font-family:'DM Mono',monospace}
+
+/* ── Canvas ── */
+.cbox{border:1.5px solid #e8e8e8;border-radius:10px;overflow:hidden;
+  width:100%;background:#fff}
+canvas{display:block;width:100%}
+
+/* ── Slide 1: Title ── */
+#s1{justify-content:flex-end;padding-bottom:110px}
+#s1 .chip{display:inline-block;border:2px solid #0f0f0f;
+  padding:5px 14px;font-size:14px;letter-spacing:.16em;
+  text-transform:uppercase;margin-bottom:28px;font-weight:600}
+#s1 h1{font-size:80px;font-weight:900;line-height:1.08;margin-bottom:18px}
+#s1 .sub{font-size:26px;color:#888;font-weight:300}
+#s1 .hint{position:absolute;bottom:28px;left:108px;
+  font-size:15px;color:#ccc;letter-spacing:.05em}
+
+/* ── Slide 2: Flow ── */
+.flow{display:flex;gap:0;width:100%;margin-top:20px}
+.fstep{flex:1;padding:0 24px 0 0;position:relative}
+.fstep:not(:last-child)::after{content:'';position:absolute;
+  right:6px;top:28px;width:10px;height:10px;
+  border-right:2.5px solid #d0d0d0;border-top:2.5px solid #d0d0d0;
+  transform:rotate(45deg)}
+.fnum{font-size:44px;font-weight:900;color:#eee;line-height:1;margin-bottom:8px}
+.ftitle{font-size:21px;font-weight:700;margin-bottom:7px}
+.fdesc{font-size:18px;color:#555;line-height:1.55}
+
+/* ── Slide 7: Conclusion ── */
+.citem{display:flex;gap:16px;align-items:flex-start;
+  padding:14px 0;border-bottom:1px solid #f0f0f0}
+.citem:last-child{border:none}
+.cnum{font-size:38px;font-weight:900;color:#ebebeb;
+  line-height:1;flex-shrink:0;width:52px}
+.ctext{font-size:23px;line-height:1.65;color:#1a1a1a}
+.cbold{font-weight:700}
+
+/* ── Slide 8: Thank You ── */
+#s8{background:#0f0f0f;color:#fff}
+#s8 .rule{background:#333}
+#s8 h1{color:#fff;font-size:88px;font-weight:900;margin-bottom:14px}
+#s8 .sub{color:#555;font-size:22px;font-weight:300}
+#s8 .kw{margin-top:36px;display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
+#s8 .kw span{border:1.5px solid #333;padding:7px 18px;
+  font-size:16px;color:#555;border-radius:4px;letter-spacing:.08em}
+
+/* ── Nav ── */
+.nav{position:fixed;bottom:24px;right:36px;
+  display:flex;align-items:center;gap:11px;z-index:100}
+.nb{width:40px;height:40px;border:2px solid #0f0f0f;background:#fff;
+  color:#0f0f0f;border-radius:50%;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-family:inherit}
+.nb:hover{background:#0f0f0f;color:#fff}
+.nb:disabled{border-color:#ddd;color:#ddd;cursor:default;background:#fff}
+#s8 ~ .nav .nb{border-color:#333;color:#666;background:transparent}
+.ctr{font-size:14px;color:#bbb;letter-spacing:.06em;font-family:'DM Mono',monospace}
+
+.note{font-size:18px;color:#888;line-height:1.55;margin-top:6px}
+.hl{font-weight:700;color:#0f0f0f}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<!-- ════════════════════ SLIDE 1: TITLE ════════════════════ -->
+<div class="slide" id="s1">
+  <div class="chip">물리학 II 발표</div>
+  <h1>리플 현상의<br>이론적 탐구</h1>
+  <p class="sub">교류 회로에서 디지털 시스템까지</p>
+  <div class="hint">← → 키 또는 버튼으로 이동</div>
+</div>
+
+<!-- ════════════════════ SLIDE 2: 탐구 동기 ════════════════════ -->
+<div class="slide" id="s2">
+  <div class="eyebrow">탐구 동기</div>
+  <div class="rule"></div>
+  <h2>왜 탐구하게 됐나</h2>
+  <div class="flow">
+    <div class="fstep">
+      <div class="fnum">01</div>
+      <div class="ftitle">오실로스코프 실험</div>
+      <div class="fdesc">수업 유연화 주간, 교류 회로를 직접 구성하고 오실로스코프로 파형을 관찰함</div>
+    </div>
+    <div class="fstep">
+      <div class="fnum">02</div>
+      <div class="ftitle">리플 현상 발견</div>
+      <div class="fdesc">자료 조사 중 정류 출력에 남은 전압 변동을 마주침. 당시엔 어영부영 넘어감</div>
+    </div>
+    <div class="fstep">
+      <div class="fnum">03</div>
+      <div class="ftitle">물리 II 학습</div>
+      <div class="fdesc">교류 회로와 커패시터의 충·방전 원리를 수업에서 배움</div>
+    </div>
+    <div class="fstep">
+      <div class="fnum">04</div>
+      <div class="ftitle">연결 발견 → 탐구 시작</div>
+      <div class="fdesc">두 개념이 연결됨을 인식. 궁금증을 해결할 기회로 삼아 탐구를 시작함</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SLIDE 3: 교류 & 정류 ════════════════════ -->
+<div class="slide" id="s3">
+  <div class="eyebrow">이론적 배경</div>
+  <div class="rule"></div>
+  <h2>교류와 정류 회로</h2>
+  <div class="g2">
+    <div>
+      <div class="fml fml-lg">\( V(t) = V_0 \sin(\omega t) \)</div>
+      <div class="sym" style="margin-bottom:22px">
+        <span class="sk">\(V_0\)</span><span class="sv">피크 전압 (최댓값, V)</span>
+        <span class="sk">\(\omega = 2\pi f\)</span><span class="sv">각주파수 (rad/s)</span>
+        <span class="sk">\(f\)</span><span class="sv">주파수 (Hz)</span>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>정류 방식</th><th>다이오드</th><th>리플 주파수</th></tr></thead>
+        <tbody>
+          <tr><td>반파 정류</td><td>1개</td><td>\(f\)</td></tr>
+          <tr><td>전파 정류 (브리지)</td><td>4개</td><td>\(2f\)</td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:16px">전파 정류는 음의 반주기도 양으로 반전 → 리플 주파수 2배</p>
+    </div>
+    <div>
+      <div class="photo-ph">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+          <path d="m21 15-5-5L5 21"/>
+        </svg>
+        <span>( 사진 )</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SLIDE 4: 리플 현상 (Interactive) ════════════════════ -->
+<div class="slide" id="s4">
+  <div class="eyebrow">리플 현상의 개념</div>
+  <div class="rule"></div>
+  <h2>정류해도 왜 DC가 아닌가?</h2>
+  <div class="g46">
+    <div>
+      <div class="btn-row">
+        <button class="btn on" id="btnH" onclick="setRippleMode('half')">반파 정류</button>
+        <button class="btn" id="btnF" onclick="setRippleMode('full')">전파 정류</button>
+      </div>
+      <div class="fml">리플 계수 \(\;\gamma = \dfrac{V_{r(\text{rms})}}{V_{DC}}\)</div>
+      <table class="tbl" style="margin-top:14px">
+        <thead><tr><th>방식</th><th>리플 주파수</th><th>\(\gamma\)</th></tr></thead>
+        <tbody>
+          <tr><td>반파</td><td>\(f\)</td><td>≈ 1.21</td></tr>
+          <tr><td>전파</td><td>\(2f\)</td><td>≈ 0.48</td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:14px">\(\gamma\)가 작을수록 이상적인 직류에 가까움<br>
+      <span class="hl">전파 정류가 반파 대비 리플 약 절반</span></p>
+    </div>
+    <div>
+      <div class="cbox">
+        <canvas id="cRipple" width="720" height="340"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SLIDE 5: 커패시터 (Interactive) ════════════════════ -->
+<div class="slide" id="s5">
+  <div class="eyebrow">커패시터와의 관계</div>
+  <div class="rule"></div>
+  <h2>C가 클수록 리플이 줄어든다</h2>
+  <div class="g2">
+    <div>
+      <div class="fml fml-lg">\[ V_r \approx \frac{V_0}{2fRC} \quad \text{(전파 정류)}\]</div>
+      <div class="sym" style="margin-bottom:16px">
+        <span class="sk">\(V_0\)</span><span class="sv">피크 전압 = 5 V</span>
+        <span class="sk">\(f\)</span><span class="sv">주파수 = 60 Hz</span>
+        <span class="sk">\(R\)</span><span class="sv">부하 저항 = 1 kΩ</span>
+        <span class="sk">\(C\)</span><span class="sv">커패시터 용량 → 아래에서 조절</span>
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-row">
+          <span class="sl-label">C 값</span>
+          <span class="sl-val" id="cDisp">100 µF</span>
+        </div>
+        <input type="range" id="cSlider" min="50" max="3000" step="50" value="100"
+          oninput="updateCap(+this.value)">
+        <div class="sl-ends"><span>50 µF</span><span>3000 µF</span></div>
+      </div>
+      <div class="live">
+        <div class="lrow">
+          <span class="lk">\(\tau = RC\)</span>
+          <span class="lv" id="tauDisp">100 ms</span>
+        </div>
+        <div class="lrow">
+          <span class="lk">\(V_r\) (계산값)</span>
+          <span class="lv" id="vrDisp">0.139 V</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="cbox">
+        <canvas id="cCap" width="620" height="340"></canvas>
+      </div>
+      <p class="note" style="margin-top:8px;text-align:center">
+        회색 점선 = 정류 파형 &nbsp;/&nbsp; 검은 실선 = 커패시터 평활 후 출력
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SLIDE 6: 노이즈 마진 ════════════════════ -->
+<div class="slide" id="s6">
+  <div class="eyebrow">컴퓨터 공학으로의 연결</div>
+  <div class="rule"></div>
+  <h2>노이즈 마진이란?</h2>
+  <div class="g2">
+    <div>
+      <p style="margin-bottom:18px;font-size:25px">
+        디지털 게이트는 전압 크기로 <span class="hl">0과 1</span>을 구분한다.<br>
+        전원에 리플이 섞이면 신호가 <span class="hl">불확정 영역</span>에 진입할 수 있다.
+      </p>
+      <div class="fml">
+        \( NM_H = V_{OH} - V_{IH} \)<br>
+        \( NM_L = V_{IL} - V_{OL} \)
+      </div>
+      <div class="sym" style="margin-top:14px">
+        <span class="sk">\(V_{OH}\)</span><span class="sv">출력 HIGH의 최솟값</span>
+        <span class="sk">\(V_{IH}\)</span><span class="sv">입력 HIGH 인식 최솟값</span>
+        <span class="sk">\(V_{IL}\)</span><span class="sv">입력 LOW 인식 최댓값</span>
+        <span class="sk">\(V_{OL}\)</span><span class="sv">출력 LOW의 최댓값</span>
+      </div>
+      <p class="note" style="margin-top:14px">
+        \(V_r\)이 노이즈 마진 \(NM\)을 초과하면 <span class="hl">0과 1을 오판</span>하게 된다.<br>
+        물리적 리플 → 소프트웨어 신뢰성 문제
+      </p>
+    </div>
+    <div>
+      <div class="cbox">
+        <canvas id="cNM" width="560" height="380"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SLIDE 7: 결론 ════════════════════ -->
+<div class="slide" id="s7">
+  <div class="eyebrow">결론 및 시사점</div>
+  <div class="rule"></div>
+  <h2>탐구 요약</h2>
+  <div class="g2" style="align-items:start">
+    <div>
+      <div class="citem">
+        <div class="cnum">1</div>
+        <div class="ctext">
+          <span class="cbold">리플의 발생 원인</span><br>
+          정류 후 잔류하는 교류 성분. 전파 정류(\(2f\))가 반파(\(f\))보다 리플 계수 낮음 (≈ 0.48 vs 1.21).
+        </div>
+      </div>
+      <div class="citem">
+        <div class="cnum">2</div>
+        <div class="ctext">
+          <span class="cbold">커패시터의 역할</span><br>
+          \(V_r \approx \frac{V_0}{nfRC}\). \(\tau = RC\)가 클수록 리플 감소. 완전한 DC는 \(C \to \infty\)에서만 가능.
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="citem">
+        <div class="cnum">3</div>
+        <div class="ctext">
+          <span class="cbold">노이즈 마진과 디지털 논리</span><br>
+          리플이 노이즈 마진 초과 시 이진 논리 판단 실패. 물리 현상이 SW 신뢰성으로 직결.
+        </div>
+      </div>
+      <div class="citem">
+        <div class="cnum">4</div>
+        <div class="ctext">
+          <span class="cbold">전원 무결성 (Power Integrity)</span><br>
+          CPU/GPU 환경에서 수십 mV 리플도 클록 지터 유발. 물리학이 컴퓨터 공학의 기초임을 보여줌.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SLIDE 8: THANK YOU ════════════════════ -->
+<div class="slide vcenter" id="s8">
+  <div class="rule"></div>
+  <h1>Thank You</h1>
+  <p class="sub">질문이 있으신가요?</p>
+  <div class="kw">
+    <span>교류 회로</span><span>정류 & 리플</span><span>커패시터 평활</span>
+    <span>노이즈 마진</span><span>전원 무결성</span>
+  </div>
+</div>
+
+<!-- ════════════════════ NAVIGATION ════════════════════ -->
+<div class="nav">
+  <button class="nb" id="prev" onclick="go(-1)" disabled>←</button>
+  <span class="ctr" id="ctr">1 / 8</span>
+  <button class="nb" id="next" onclick="go(1)">→</button>
+</div>
+
+<script>
+/* ════ State ════ */
+let cur = 0;
+const slides = [...document.querySelectorAll('.slide')];
+const N = slides.length;
+let rippleMode = 'half';
+let capC = 100; // µF
+
+/* ════ Init ════ */
+slides[0].classList.add('active');
+updateUI();
+window.addEventListener('DOMContentLoaded', () => { setTimeout(drawAll, 400); });
+window.addEventListener('load', () => { setTimeout(drawAll, 200); });
+
+function drawAll() {
+  drawRipple(); drawCap(); drawNM();
+  if (window.MathJax) MathJax.typesetPromise(slides).catch(()=>{});
+}
+
+/* ════ Navigation ════ */
+function go(d) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(cur + d, N - 1));
+  slides[cur].classList.add('active');
+  updateUI();
+  if (window.MathJax) MathJax.typesetPromise([slides[cur]]).catch(()=>{});
+  setTimeout(() => {
+    if (cur === 3) drawRipple();
+    if (cur === 4) drawCap();
+    if (cur === 5) drawNM();
+  }, 60);
+}
+
+function updateUI() {
+  document.getElementById('prev').disabled = cur === 0;
+  document.getElementById('next').disabled = cur === N - 1;
+  document.getElementById('ctr').textContent = `${cur+1} / ${N}`;
+  document.getElementById('progress').style.width = ((cur+1)/N*100) + '%';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ') { e.preventDefault(); go(1); }
+  if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); go(-1); }
+});
+
+/* ════ Ripple Mode ════ */
+function setRippleMode(m) {
+  rippleMode = m;
+  document.getElementById('btnH').classList.toggle('on', m==='half');
+  document.getElementById('btnF').classList.toggle('on', m==='full');
+  drawRipple();
+}
+
+/* ════ CANVAS: Ripple Concept ════ */
+function drawRipple() {
+  const cv = document.getElementById('cRipple'); if (!cv) return;
+  const W = cv.width, H = cv.height;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const pL=36, pR=60, pT=28, pB=32;
+  const dW = W-pL-pR, dH = H-pT-pB;
+  const CYCLES = 3;
+
+  const px = t => pL + (t/CYCLES)*dW;
+  const py = v => pT + dH*(1-v);
+
+  /* grid */
+  ctx.strokeStyle='#f3f3f3'; ctx.lineWidth=1;
+  for (let i=0;i<=4;i++) {
+    const y=pT+i*dH/4;
+    ctx.beginPath(); ctx.moveTo(pL,y); ctx.lineTo(W-pR,y); ctx.stroke();
+  }
+
+  /* AC input (dashed gray) */
+  ctx.save();
+  ctx.strokeStyle='#d0d0d0'; ctx.lineWidth=2; ctx.setLineDash([7,4]);
+  ctx.beginPath();
+  for (let i=0;i<=500;i++) {
+    const t=i/500*CYCLES;
+    const v=(1+Math.sin(2*Math.PI*t))/2;
+    const x=px(t), y=py(v);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+  /* Rectified waveform */
+  ctx.strokeStyle='#0f0f0f'; ctx.lineWidth=3;
+  ctx.beginPath();
+  for (let i=0;i<=600;i++) {
+    const t=i/600*CYCLES;
+    const v = rippleMode==='half'
+      ? Math.max(0, Math.sin(2*Math.PI*t))
+      : Math.abs(Math.sin(2*Math.PI*t));
+    const x=px(t), y=py(v);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  /* DC average line */
+  const dcLv = rippleMode==='full' ? 2/Math.PI : 1/Math.PI;
+  const dcY = py(dcLv);
+  ctx.save();
+  ctx.strokeStyle='#d42b2b'; ctx.lineWidth=2; ctx.setLineDash([10,5]);
+  ctx.beginPath(); ctx.moveTo(pL,dcY); ctx.lineTo(W-pR,dcY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#d42b2b'; ctx.font='bold 15px DM Mono, monospace';
+  ctx.fillText('V_DC', W-pR+4, dcY+5);
+  ctx.restore();
+
+  /* Vr bracket */
+  const peakY = py(1);
+  const bx = W - pR - 38;
+  ctx.save();
+  ctx.strokeStyle='#d42b2b'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(bx+12, peakY); ctx.lineTo(bx, peakY);
+  ctx.lineTo(bx, dcY);
+  ctx.moveTo(bx, dcY); ctx.lineTo(bx+12, dcY);
+  ctx.stroke();
+  // Arrow heads
+  ctx.beginPath();
+  ctx.moveTo(bx+4, peakY+6); ctx.lineTo(bx+8, peakY+2); ctx.lineTo(bx+12, peakY+6); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx+4, dcY-6); ctx.lineTo(bx+8, dcY-2); ctx.lineTo(bx+12, dcY-6); ctx.stroke();
+  ctx.fillStyle='#d42b2b'; ctx.font='bold 15px DM Mono, monospace';
+  ctx.fillText('Vr', bx-28, (peakY+dcY)/2+5);
+  ctx.restore();
+
+  /* Labels */
+  ctx.fillStyle='#aaa'; ctx.font='14px Noto Sans KR, sans-serif';
+  ctx.fillText(rippleMode==='half'?'반파 정류 출력  (리플 주파수 = f)':'전파 정류 출력  (리플 주파수 = 2f)', pL+4, pT-8);
+  ctx.fillStyle='#ccc';
+  ctx.fillText('AC 입력 (점선)', pL+4, pT+16);
+}
+
+/* ════ CANVAS: Capacitor ════ */
+function updateCap(val) {
+  capC = val;
+  document.getElementById('cDisp').textContent = capC + ' µF';
+  const C = capC*1e-6, R=1000, f=60, V0=5;
+  const tau = R*C;
+  document.getElementById('tauDisp').textContent = (tau*1000).toFixed(0)+' ms';
+  const vr = V0/(2*f*R*C);
+  document.getElementById('vrDisp').textContent = vr<0.001?'<0.001 V':vr.toFixed(3)+' V';
+  drawCap();
+}
+
+function drawCap() {
+  const cv = document.getElementById('cCap'); if (!cv) return;
+  const W=cv.width, H=cv.height;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const pL=32,pR=32,pT=28,pB=28;
+  const dW=W-pL-pR, dH=H-pT-pB;
+  const C=capC*1e-6, R=1000, f=60, V0=5;
+  const CYCLES=4, N=900;
+  const dt=CYCLES/(f*N);
+
+  const py=v=>pT+dH*(1-v/V0);
+  const px=i=>pL+(i/N)*dW;
+
+  /* Grid */
+  ctx.strokeStyle='#f0f0f0'; ctx.lineWidth=1;
+  for (let i=0;i<=4;i++) {
+    const y=pT+i*dH/4;
+    ctx.beginPath(); ctx.moveTo(pL,y); ctx.lineTo(W-pR,y); ctx.stroke();
+  }
+
+  /* Simulate */
+  const rect=[], smooth=[];
+  let vc=V0;
+  for (let i=0;i<N;i++) {
+    const t=i*dt;
+    const vr=V0*Math.abs(Math.sin(Math.PI*f*t));
+    rect.push(vr);
+    if (vr>vc) vc=vr;
+    else vc*=Math.exp(-dt/(R*C));
+    smooth.push(Math.max(0,vc));
+  }
+
+  /* Rectified dashed */
+  ctx.save();
+  ctx.strokeStyle='#d0d0d0'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+  ctx.beginPath();
+  for (let i=0;i<N;i++) { const x=px(i),y=py(rect[i]); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+  /* Smoothed solid */
+  ctx.strokeStyle='#0f0f0f'; ctx.lineWidth=3;
+  ctx.beginPath();
+  for (let i=0;i<N;i++) { const x=px(i),y=py(smooth[i]); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.stroke();
+
+  /* Vr annotation */
+  const half=Math.floor(N/2);
+  const localMax=Math.max(...smooth.slice(half-30,half+30));
+  const localMin=Math.min(...smooth.slice(half-30,half+30));
+  const xA=px(half+50);
+  if (localMax-localMin>0.01) {
+    ctx.save();
+    ctx.strokeStyle='#d42b2b'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(xA+12,py(localMax)); ctx.lineTo(xA,py(localMax));
+    ctx.lineTo(xA,py(localMin)); ctx.lineTo(xA+12,py(localMin));
+    ctx.stroke();
+    ctx.fillStyle='#d42b2b'; ctx.font='bold 14px DM Mono, monospace';
+    const vrLabel=(localMax-localMin).toFixed(2)+'V';
+    ctx.fillText('Vr≈'+vrLabel, xA+15, (py(localMax)+py(localMin))/2+5);
+    ctx.restore();
+  }
+
+  /* Axis labels */
+  ctx.fillStyle='#bbb'; ctx.font='13px DM Mono, monospace';
+  ctx.fillText(V0+'V', pL-28, py(V0)+4);
+  ctx.fillText('0V', pL-22, py(0)+4);
+}
+
+/* ════ CANVAS: Noise Margin ════ */
+function drawNM() {
+  const cv=document.getElementById('cNM'); if (!cv) return;
+  const W=cv.width, H=cv.height;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const pL=68, pR=20, pT=20, pB=20;
+  const dH=H-pT-pB, dW=W-pL-pR;
+
+  /* Voltages (3.3V CMOS) */
+  const VCC=3.3;
+  const VOH=2.4, VIH=2.0, VIL=0.8, VOL=0.4;
+  const py=v=>pT+dH*(1-v/VCC);
+
+  /* Zone fills */
+  const zones=[
+    {y0:VCC, y1:VOH, bg:'#edf8ed'},  // HIGH safe
+    {y0:VOH, y1:VIH, bg:'#d4eed4'},  // NM_H
+    {y0:VIH, y1:VIL, bg:'#fff8e1'},  // Undefined
+    {y0:VIL, y1:VOL, bg:'#fce4e4'},  // NM_L
+    {y0:VOL, y1:0,   bg:'#f9d0d0'},  // LOW safe
+  ];
+  zones.forEach(z=>{
+    ctx.fillStyle=z.bg;
+    ctx.fillRect(pL, py(z.y0), dW, py(z.y1)-py(z.y0));
+  });
+
+  /* Threshold lines */
+  const lines=[
+    {v:VOH,lbl:`VOH=${VOH}V`,c:'#2a7a2a'},
+    {v:VIH,lbl:`VIH=${VIH}V`,c:'#7a7a00'},
+    {v:VIL,lbl:`VIL=${VIL}V`,c:'#c06000'},
+    {v:VOL,lbl:`VOL=${VOL}V`,c:'#c02020'},
+  ];
+  lines.forEach(l=>{
+    const y=py(l.v);
+    ctx.save();
+    ctx.strokeStyle=l.c; ctx.lineWidth=1.5; ctx.setLineDash([7,3]);
+    ctx.beginPath(); ctx.moveTo(pL,y); ctx.lineTo(W-pR,y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=l.c; ctx.font='bold 13px DM Mono, monospace';
+    ctx.textAlign='right';
+    ctx.fillText(l.lbl, pL-4, y+4);
+    ctx.restore();
+  });
+
+  /* Zone labels */
+  ctx.textAlign='left'; ctx.font='bold 14px Noto Sans KR, sans-serif';
+  ctx.fillStyle='#2a7a2a'; ctx.fillText('HIGH 영역', pL+8, py(VCC)+20);
+  ctx.fillStyle='#3a6a3a'; ctx.fillText('NM_H', pL+8, (py(VOH)+py(VIH))/2+5);
+  ctx.fillStyle='#8a7000'; ctx.fillText('불확정 영역 ⚠', pL+8, (py(VIH)+py(VIL))/2+5);
+  ctx.fillStyle='#7a3a3a'; ctx.fillText('NM_L', pL+8, (py(VIL)+py(VOL))/2+5);
+  ctx.fillStyle='#c02020'; ctx.fillText('LOW 영역', pL+8, py(0)-8);
+
+  /* Signal with ripple */
+  const sx=pL+dW*0.62;
+  const sw=dW*0.32;
+  ctx.save();
+  ctx.strokeStyle='#333'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  for (let i=0;i<=80;i++) {
+    const t=i/80;
+    const x=sx+t*sw;
+    const rippleV=0.55*Math.sin(2*Math.PI*t*5);
+    const y=py(2.5+rippleV);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  /* label */
+  ctx.fillStyle='#c02020';
+  ctx.font='bold 13px Noto Sans KR, sans-serif';
+  ctx.fillText('← 리플에 의한 변동', sx-2, py(VIH)-8);
+  ctx.restore();
+}
+
+/* ════ Resize ════ */
+window.addEventListener('resize',()=>{
+  if(cur===3) drawRipple();
+  if(cur===4) drawCap();
+  if(cur===5) drawNM();
+});
+
+/* ════ First draw ════ */
+setTimeout(drawAll, 600);
+</script>
+</body>
+</html>
